@@ -1,3 +1,5 @@
+using System;
+using System.Reflection;
 using BepInEx;
 using BepInEx.Configuration;
 using HarmonyLib;
@@ -17,7 +19,7 @@ namespace StudioCharaSort
 		public const string GUID = "kky.kk.studiocharasort";
 #endif
 		public const string PluginName = "Studio Character Sort";
-		internal const string Version = "1.0.0.1";
+		internal const string Version = "1.0.1.1";
 
 		public static ConfigEntry<sortTypes> ConfigSType;
 		public static ConfigEntry<sortOrders> ConfigSOrder;
@@ -32,6 +34,9 @@ namespace StudioCharaSort
 			sortAscend = (ConfigSOrder.Value != sortOrders.Descending);
 			Harmony harmony = new Harmony("StudioCharaSort");
 			harmony.PatchAll(typeof(StudioCharaSort));
+
+			Type CostumeInfoType = typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic);
+			harmony.Patch(CostumeInfoType.GetMethod("InitList", AccessTools.all), postfix : new HarmonyMethod(typeof(Patches), nameof(Patches.InitListPostfix)));
 		}
 
 		[HarmonyPostfix, HarmonyPatch(typeof(CharaList), "InitCharaList")]
@@ -40,6 +45,16 @@ namespace StudioCharaSort
 			bool flag = !(ConfigSType.Value == sortTypes.Name & !sortAscend);
 			if (flag)
 				___charaFileSort.Sort((int) ConfigSType.Value, sortAscend);
+		}
+	}
+
+	public class Patches
+	{
+		public static void InitListPostfix(object __instance)
+		{
+			Type type = __instance.GetType();
+			FieldInfo info = type.GetField("fileSort", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
+			((CharaFileSort) info.GetValue(__instance)).Sort((int) StudioCharaSort.ConfigSType.Value, StudioCharaSort.sortAscend);
 		}
 	}
 }
