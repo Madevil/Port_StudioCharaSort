@@ -19,7 +19,7 @@ namespace StudioCharaSort
 		public const string GUID = "kky.kk.studiocharasort";
 #endif
 		public const string PluginName = "Studio Character Sort";
-		internal const string Version = "1.0.1.1";
+		internal const string Version = "1.0.2.0";
 
 		public static ConfigEntry<sortTypes> ConfigSType;
 		public static ConfigEntry<sortOrders> ConfigSOrder;
@@ -29,14 +29,14 @@ namespace StudioCharaSort
 
 		private void Awake()
 		{
-			ConfigSType = base.Config.Bind<sortTypes>("Character cards default sort values. Changes take effect at next startup.", "Sort By", sortTypes.Name, "Set custom default sort type. Game default is Name");
-			ConfigSOrder = base.Config.Bind<sortOrders>("Character cards default sort values. Changes take effect at next startup.", "Sort Order", sortOrders.Descending, "Set custom default sort order. Game default is Descending");
+			ConfigSType = Config.Bind("Character cards default sort values. Changes take effect at next startup.", "Sort By", sortTypes.Name, "Set custom default sort type. Game default is Name");
+			ConfigSOrder = Config.Bind("Character cards default sort values. Changes take effect at next startup.", "Sort Order", sortOrders.Descending, "Set custom default sort order. Game default is Descending");
 			sortAscend = (ConfigSOrder.Value != sortOrders.Descending);
-			Harmony harmony = new Harmony("StudioCharaSort");
-			harmony.PatchAll(typeof(StudioCharaSort));
+			Harmony HarmonyInstance = new Harmony("StudioCharaSort");
+			HarmonyInstance.PatchAll(typeof(StudioCharaSort));
 
 			Type CostumeInfoType = typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic);
-			harmony.Patch(CostumeInfoType.GetMethod("InitList", AccessTools.all), postfix : new HarmonyMethod(typeof(Patches), nameof(Patches.InitListPostfix)));
+			HarmonyInstance.Patch(CostumeInfoType.GetMethod("InitList", AccessTools.all), postfix : new HarmonyMethod(typeof(Patches), nameof(Patches.InitListPostfix)));
 		}
 
 		[HarmonyPostfix, HarmonyPatch(typeof(CharaList), "InitCharaList")]
@@ -52,9 +52,7 @@ namespace StudioCharaSort
 	{
 		public static void InitListPostfix(object __instance)
 		{
-			Type type = __instance.GetType();
-			FieldInfo info = type.GetField("fileSort", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
-			((CharaFileSort) info.GetValue(__instance)).Sort((int) StudioCharaSort.ConfigSType.Value, StudioCharaSort.sortAscend);
+			Traverse.Create(__instance).Field("fileSort").GetValue<CharaFileSort>().Sort((int) StudioCharaSort.ConfigSType.Value, StudioCharaSort.sortAscend);
 		}
 	}
 }
