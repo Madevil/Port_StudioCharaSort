@@ -1,5 +1,4 @@
-﻿using StudioCharaSort;
-using System.Reflection;
+﻿using System.Reflection;
 using static StudioCharaSort.StudioCharaSort;
 
 [assembly: AssemblyTitle(PluginName)]
